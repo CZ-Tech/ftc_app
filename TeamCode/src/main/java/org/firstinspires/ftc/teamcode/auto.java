@@ -85,7 +85,7 @@
       Orientation angles;
       Acceleration gravity;
       //定义惯性传感器
-      private static final String VUFORIA_KEY = "AVdOcwf/////AAABmbswlTQtOUzMptGVnSjAeKVGwl2iTTGiYmbkrb9oeSJtSS+XVedw0nNaOw/hrg4SOQBWNJGQMsZF+haAaLAVN+O9fn4WeUxvmd4DfuQETZB8za8bCnZR1nrEw2ywKVhNPOIbcSeUtSQ1Uf58yq6Fb3+QZBQKnmU0CDSbdNjhMqCCiBy1Er+aIVR5P8SmSIOS0zHgZITgdbwxhoNFiCP0sy7AvRKXYoR/IbJicqEnzibPT7zgKDWD2fq2B46knjD27JMnN+t+O/1tE9sujbZsWucqt7AcTy2bv1qLV14iK0hUpyOOY9hd3MDCiL93on/MHKYbWd2qX+FgVYtTNtH77Jg/uXsIrpjqIbqSdsFvTf7i";
+      private static final String VUFORIA_KEY = "-- YOUR NEW VUFORIA KEY GOES HERE  ---";
       //图像识别所需的密码
 //这里的图像识别是借助VUFORIA公司所给的SDK，需要去其公司的网址上注册信息得到一个密码才能使用他们的SDK
       private VuforiaLocalizer vuforia;
