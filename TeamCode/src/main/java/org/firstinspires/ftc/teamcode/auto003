@@ -1,0 +1,197 @@
+package org.firstinspires.ftc.teamcode;
+import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.util.ElapsedTime;
+import java.util.List;
+import org.firstinspires.ftc.robotcore.external.ClassFactory;
+import org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer;
+import org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer.CameraDirection;
+import org.firstinspires.ftc.robotcore.external.tfod.TFObjectDetector;
+import org.firstinspires.ftc.robotcore.external.tfod.Recognition;
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+@TeleOp(name = "Concept: TensorFlow Object Detection", group = "Concept")
+public class congtouzailai extends LinearOpMode
+{
+    private DcMotor zuoqian;
+    private DcMotor zuohou;
+    private DcMotor youqian;
+    private DcMotor youhou;
+    private DcMotor guding;
+    private DcMotor tisheng;
+    private Servo shangzhua;
+    private Servo xiazhua;
+    private ElapsedTime runtime = new ElapsedTime();
+    double angle = 0;
+    private VuforiaLocalizer vuforia = null;
+    enum MotorMode{
+        qian,hou,zuo,you,ting,zuoxuan,youxuan
+    }
+    enum jiaodu{
+        fangxia,zhuaqu
+    }
+    private static final String TFOD_MODEL_ASSET = "Skystone.tflite";
+    private static final String LABEL_FIRST_ELEMENT = "Stone";
+    private static final String LABEL_SECOND_ELEMENT = "Skystone";
+    private static final String VUFORIA_KEY =
+            "";
+    private TFObjectDetector tfod;
+    @Override
+public void runOpMode() {
+        //region 初始化
+        //region 配对电机
+        zuoqian = hardwareMap.get(DcMotor.class, "motor_zuoqian");
+        youqian = hardwareMap.get(DcMotor.class, "motor_youqian");
+        zuohou = hardwareMap.get(DcMotor.class, "motor_zuohou");
+        youhou = hardwareMap.get(DcMotor.class, "motor_youhou");
+        xiazhua = hardwareMap.get(Servo.class, "xiazhua");
+        shangzhua = hardwareMap.get(Servo.class, "shangzhua");
+        //endregion
+        //region 改变电机自转方向
+        zuoqian.setDirection(DcMotor.Direction.FORWARD);
+        zuohou.setDirection(DcMotor.Direction.FORWARD);
+        youqian.setDirection(DcMotor.Direction.FORWARD);
+        youhou.setDirection(DcMotor.Direction.FORWARD);
+        shejiao(jiaodu.fangxia);
+        //endregion
+        //endregion
+        //region 图像识别初始化
+        initVuforia();
+        //初始化Vuforia
+    if (ClassFactory.getInstance().canCreateTFObjectDetector()) {
+        initTfod();
+    } else {
+        telemetry.addData("Sorry!", "This device is not compatible with TFOD");
+    }
+    if (tfod != null) {
+        tfod.activate();
+    }
+        //初始化tfod
+    telemetry.addData(">", "Press Play to start op mode");
+    telemetry.update();
+        //endregion
+    waitForStart();//等待开始
+        runtime.reset();
+    if (opModeIsActive())
+    {
+        while (opModeIsActive())
+        {
+            if (tfod != null)
+            {
+                List<Recognition> updatedRecognitions = tfod.getUpdatedRecognitions();
+                if (updatedRecognitions != null)
+                {
+                    telemetry.addData("# Object Detected", updatedRecognitions.size());
+                    int i = 0;
+                    for (Recognition recognition : updatedRecognitions)
+                    {
+                        runMotor(MotorMode.zuoxuan);
+                        telemetry.addData(String.format("label (%d)", i), recognition.getLabel());
+                        telemetry.addData(String.format("  left,top (%d)", i), "%.03f , %.03f",
+                                recognition.getLeft(), recognition.getTop());
+                        telemetry.addData(String.format("  right,bottom (%d)", i), "%.03f , %.03f",
+                                recognition.getRight(), recognition.getBottom());
+                            if (recognition.getLabel().equals(LABEL_SECOND_ELEMENT))
+                            {
+                                runMotor(MotorMode.ting);
+                                angle = recognition.estimateAngleToObject(AngleUnit.DEGREES);
+                            }
+                            else if(recognition.getLabel().equals(LABEL_FIRST_ELEMENT)){
+                                runMotor(MotorMode.ting);
+                                angle = recognition.estimateAngleToObject(AngleUnit.DEGREES);
+                        }
+
+
+                            while (angle <= -4 || angle >= 4) {
+                                if (angle <= -4)
+                                    runMotor(MotorMode.youxuan);
+                                else
+                                    runMotor(MotorMode.zuoxuan);
+                            }
+                        runMotor(MotorMode.qian);
+                        sleep(1000);
+                        runMotor(MotorMode.ting);
+                    }
+
+
+
+                    telemetry.update();
+                }
+            }
+        }
+    }
+    if (tfod != null) {
+        tfod.shutdown();
+    }
+}
+    private void initVuforia() {
+        VuforiaLocalizer.Parameters parameters = new VuforiaLocalizer.Parameters();
+        parameters.vuforiaLicenseKey = VUFORIA_KEY;
+        parameters.cameraDirection = CameraDirection.BACK;
+        vuforia = ClassFactory.getInstance().createVuforia(parameters);
+    }
+    private void initTfod() {
+        int tfodMonitorViewId = hardwareMap.appContext.getResources().getIdentifier(
+                "tfodMonitorViewId", "id", hardwareMap.appContext.getPackageName());
+        TFObjectDetector.Parameters tfodParameters = new TFObjectDetector.Parameters(tfodMonitorViewId);
+        tfodParameters.minimumConfidence = 0.8;
+        tfod = ClassFactory.getInstance().createTFObjectDetector(tfodParameters, vuforia);
+        tfod.loadModelFromAsset(TFOD_MODEL_ASSET, LABEL_FIRST_ELEMENT, LABEL_SECOND_ELEMENT);
+    }
+    //region移动
+    public void runMotor(MotorMode mode) {
+        switch (mode) {
+            case qian:
+                zuoqian.setPower(1);
+                zuohou.setPower(1);
+                youqian.setPower(1);
+                youhou.setPower(1);
+            case hou:
+                zuoqian.setPower(-1);
+                zuohou.setPower(-1);
+                youqian.setPower(-1);
+                youhou.setPower(-1);
+            case zuo:
+                zuoqian.setPower(-1);
+                zuohou.setPower(1);
+                youqian.setPower(1);
+                youhou.setPower(-1);
+            case you:
+                zuoqian.setPower(1);
+                zuohou.setPower(-1);
+                youqian.setPower(-1);
+                youhou.setPower(1);
+            case ting:
+                zuoqian.setPower(0);
+                zuohou.setPower(0);
+                youqian.setPower(0);
+                youhou.setPower(0);
+            case youxuan:
+                zuoqian.setPower(0.2);
+                zuohou.setPower(0.2);
+                youqian.setPower(-0.2);
+                youhou.setPower(-0.2);
+            case zuoxuan:
+                zuoqian.setPower(-0.2);
+                zuohou.setPower(-0.2);
+                youqian.setPower(0.2);
+                youhou.setPower(0.2);
+        }
+    }
+    //endregion
+    //region机械爪
+    public void shejiao( jiaodu mode) {
+        switch (mode){
+            case zhuaqu:
+                shangzhua.setPosition(0.2);
+                xiazhua.setPosition(0.2);
+
+            case fangxia:
+                shangzhua.setPosition(0.2);
+                shangzhua.setPosition(0.2);//待修改
+
+        }
+    }
+    // endregion
+}
