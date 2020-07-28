@@ -46,7 +46,7 @@ public class Teleop002 extends OpMode
     //endregion
 
     //region 定义伺服电机初始位置
-    double higest_position;
+    double highest_position;
     double middle_position;
     //endregion
 
@@ -79,6 +79,10 @@ public class Teleop002 extends OpMode
         youqian.setDirection(DcMotor.Direction.REVERSE);
         youhou.setDirection(DcMotor.Direction.FORWARD);
         //根据陈缪鑫的电机测试，上述的方向设置才能是机器人正常行进 TODO:研究其原因
+        //endregion
+        
+        //region 设置伺服电机的初始位置
+        
         //endregion
 
         //region 输出“初始化已完成”
@@ -136,11 +140,11 @@ public class Teleop002 extends OpMode
         //region上爪的前后伸缩
         if (gamepad2.dpad_right)
         {
-          shangzhua.setPosition(higest_position + 0.1);
+          shangzhua.setPosition(highest_position + 0.1);
         }
         if (gamepad2.dpad_left)
         {
-            shangzhua.setPosition(higest_position - 0.1);
+            shangzhua.setPosition(highest_position - 0.1);
         }
         //endregion
 
