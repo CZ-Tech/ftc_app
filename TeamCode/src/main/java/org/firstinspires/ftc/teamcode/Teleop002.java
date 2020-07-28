@@ -147,11 +147,11 @@ public class Teleop002 extends OpMode
         //region 完成提升装置的升降
         if(gamepad2.dpad_up)
         {
-            xiazhua.setPosition(middle_position + 0.1);
+            tisheng.setPosition(middle_position + 0.1);
         }
         if(gamepad2.dpad_down)
         {
-            xiazhua.setPosition(middle_position - 0.1);
+            tisheng.setPosition(middle_position - 0.1);
         }
         //endregion
 
