@@ -1,0 +1,373 @@
+package org.firstinspires.ftc.teamcode;
+import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.util.ElapsedTime;
+import org.firstinspires.ftc.robotcore.external.ClassFactory;
+import org.firstinspires.ftc.robotcore.external.matrices.OpenGLMatrix;
+import org.firstinspires.ftc.robotcore.external.matrices.VectorF;
+import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
+import org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer;
+import org.firstinspires.ftc.robotcore.external.navigation.VuforiaTrackable;
+import org.firstinspires.ftc.robotcore.external.navigation.VuforiaTrackableDefaultListener;
+import org.firstinspires.ftc.robotcore.external.navigation.VuforiaTrackables;
+import java.util.ArrayList;
+import java.util.List;
+import static org.firstinspires.ftc.robotcore.external.navigation.AngleUnit.DEGREES;
+import static org.firstinspires.ftc.robotcore.external.navigation.AxesOrder.XYZ;
+import static org.firstinspires.ftc.robotcore.external.navigation.AxesOrder.YZX;
+import static org.firstinspires.ftc.robotcore.external.navigation.AxesReference.EXTRINSIC;
+import static org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer.CameraDirection.BACK;
+import static org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer.CameraDirection.FRONT;
+
+@Autonomous(name = "auto006", group = "Concept")
+public class congtouzailai444 extends LinearOpMode {
+    private static final VuforiaLocalizer.CameraDirection CAMERA_CHOICE = FRONT;
+    private static final boolean PHONE_IS_PORTRAIT = false;
+    private static final float mmPerInch = 25.4f;
+    private static final float mmTargetHeight = (6) * mmPerInch;
+    private DcMotor zuoqian;
+    private DcMotor zuohou;
+    private DcMotor youqian;
+    private DcMotor youhou;
+    private Servo guding;
+    private Servo tisheng;
+    private Servo shangzhua;
+    private Servo xiazhua;
+    private ElapsedTime runtime = new ElapsedTime();
+    private VuforiaLocalizer vuforia = null;
+    private boolean getstone = false;
+
+    enum MotorMode {
+        qian, hou, zuo, you, ting, zuoxuan, youxuan
+    }
+
+    enum jiaodu {
+        fangxia, zhuaqu
+    }
+
+    private static final String VUFORIA_KEY =
+            "你的密钥”
+    private static final float stoneZ = 2.00f * mmPerInch;
+    private static final float bridgeZ = 6.42f * mmPerInch;
+    private static final float bridgeY = 23 * mmPerInch;
+    private static final float bridgeX = 5.18f * mmPerInch;
+    private static final float bridgeRotY = 59;
+    private static final float bridgeRotZ = 180;
+    private static final float halfField = 72 * mmPerInch;
+    private static final float quadField = 36 * mmPerInch;
+    private OpenGLMatrix lastLocation = null;
+    private OpenGLMatrix robotLocation = null;
+    private boolean targetVisible = false;
+    double tX, tY, rZ, tXs, tYs, rZs;
+    private float phoneXRotate = 0;
+    private float phoneYRotate = 0;
+    private float phoneZRotate = 0;
+
+    @Override
+    public void runOpMode() {
+        //region 初始化
+//region 配对电机
+        zuoqian = hardwareMap.get(DcMotor.class, "motor_zuoqian");
+        youqian = hardwareMap.get(DcMotor.class, "motor_youqian");
+        zuohou = hardwareMap.get(DcMotor.class, "motor_zuohou");
+        youhou = hardwareMap.get(DcMotor.class, "motor_youhou");
+        xiazhua = hardwareMap.get(Servo.class, "xiazhua");
+        shangzhua = hardwareMap.get(Servo.class, "shangzhua");
+        guding = hardwareMap.get(Servo.class, "guding");
+        tisheng = hardwareMap.get(Servo.class, "tisheng");
+        //endregion
+        //region 改变电机自转方向
+        zuoqian.setDirection(DcMotor.Direction.FORWARD);
+        zuohou.setDirection(DcMotor.Direction.FORWARD);
+        youqian.setDirection(DcMotor.Direction.REVERSE);
+        youhou.setDirection(DcMotor.Direction.REVERSE);
+        shejiao(jiaodu.fangxia);
+        tisheng.setPosition(0);
+        //endregion
+        //endregion
+        //region vuforia图像识别初始化
+        int cameraMonitorViewId = hardwareMap.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
+        VuforiaLocalizer.Parameters parameters = new VuforiaLocalizer.Parameters(cameraMonitorViewId);
+        parameters.vuforiaLicenseKey = VUFORIA_KEY;
+        parameters.cameraDirection = CAMERA_CHOICE;
+        vuforia = ClassFactory.getInstance().createVuforia(parameters);
+        VuforiaTrackables targetsSkyStone = this.vuforia.loadTrackablesFromAsset("Skystone");
+        VuforiaTrackable stoneTarget = targetsSkyStone.get(0);
+        stoneTarget.setName("Stone Target");
+        VuforiaTrackable blueRearBridge = targetsSkyStone.get(1);
+        blueRearBridge.setName("Blue Rear Bridge");
+        VuforiaTrackable redRearBridge = targetsSkyStone.get(2);
+        redRearBridge.setName("Red Rear Bridge");
+        VuforiaTrackable redFrontBridge = targetsSkyStone.get(3);
+        redFrontBridge.setName("Red Front Bridge");
+        VuforiaTrackable blueFrontBridge = targetsSkyStone.get(4);
+        blueFrontBridge.setName("Blue Front Bridge");
+        VuforiaTrackable red1 = targetsSkyStone.get(5);
+        red1.setName("Red Perimeter 1");
+        VuforiaTrackable red2 = targetsSkyStone.get(6);
+        red2.setName("Red Perimeter 2");
+        VuforiaTrackable front1 = targetsSkyStone.get(7);
+        front1.setName("Front Perimeter 1");
+        VuforiaTrackable front2 = targetsSkyStone.get(8);
+        front2.setName("Front Perimeter 2");
+        VuforiaTrackable blue1 = targetsSkyStone.get(9);
+        blue1.setName("Blue Perimeter 1");
+        VuforiaTrackable blue2 = targetsSkyStone.get(10);
+        blue2.setName("Blue Perimeter 2");
+        VuforiaTrackable rear1 = targetsSkyStone.get(11);
+        rear1.setName("Rear Perimeter 1");
+        VuforiaTrackable rear2 = targetsSkyStone.get(12);
+        rear2.setName("Rear Perimeter 2");
+        List<VuforiaTrackable> allTrackables = new ArrayList<VuforiaTrackable>();
+        allTrackables.addAll(targetsSkyStone);
+        stoneTarget.setLocation(OpenGLMatrix
+                .translation(0, 0, stoneZ)
+                .multiplied(Orientation.getRotationMatrix(EXTRINSIC, XYZ, DEGREES, 90, 0, -90)));
+        blueFrontBridge.setLocation(OpenGLMatrix
+                .translation(-bridgeX, bridgeY, bridgeZ)
+                .multiplied(Orientation.getRotationMatrix(EXTRINSIC, XYZ, DEGREES, 0, bridgeRotY, bridgeRotZ)));
+        blueRearBridge.setLocation(OpenGLMatrix
+                .translation(-bridgeX, bridgeY, bridgeZ)
+                .multiplied(Orientation.getRotationMatrix(EXTRINSIC, XYZ, DEGREES, 0, -bridgeRotY, bridgeRotZ)));
+        redFrontBridge.setLocation(OpenGLMatrix
+                .translation(-bridgeX, -bridgeY, bridgeZ)
+                .multiplied(Orientation.getRotationMatrix(EXTRINSIC, XYZ, DEGREES, 0, -bridgeRotY, 0)));
+        redRearBridge.setLocation(OpenGLMatrix
+                .translation(bridgeX, -bridgeY, bridgeZ)
+                .multiplied(Orientation.getRotationMatrix(EXTRINSIC, XYZ, DEGREES, 0, bridgeRotY, 0)));
+        red1.setLocation(OpenGLMatrix
+                .translation(quadField, -halfField, mmTargetHeight)
+                .multiplied(Orientation.getRotationMatrix(EXTRINSIC, XYZ, DEGREES, 90, 0, 180)));
+        red2.setLocation(OpenGLMatrix
+                .translation(-quadField, -halfField, mmTargetHeight)
+                .multiplied(Orientation.getRotationMatrix(EXTRINSIC, XYZ, DEGREES, 90, 0, 180)));
+        front1.setLocation(OpenGLMatrix
+                .translation(-halfField, -quadField, mmTargetHeight)
+                .multiplied(Orientation.getRotationMatrix(EXTRINSIC, XYZ, DEGREES, 90, 0, 90)));
+        front2.setLocation(OpenGLMatrix
+                .translation(-halfField, quadField, mmTargetHeight)
+                .multiplied(Orientation.getRotationMatrix(EXTRINSIC, XYZ, DEGREES, 90, 0, 90)));
+        blue1.setLocation(OpenGLMatrix
+                .translation(-quadField, halfField, mmTargetHeight)
+                .multiplied(Orientation.getRotationMatrix(EXTRINSIC, XYZ, DEGREES, 90, 0, 0)));
+        blue2.setLocation(OpenGLMatrix
+                .translation(quadField, halfField, mmTargetHeight)
+                .multiplied(Orientation.getRotationMatrix(EXTRINSIC, XYZ, DEGREES, 90, 0, 0)));
+        rear1.setLocation(OpenGLMatrix
+                .translation(halfField, quadField, mmTargetHeight)
+                .multiplied(Orientation.getRotationMatrix(EXTRINSIC, XYZ, DEGREES, 90, 0, -90)));
+        rear2.setLocation(OpenGLMatrix
+                .translation(halfField, -quadField, mmTargetHeight)
+                .multiplied(Orientation.getRotationMatrix(EXTRINSIC, XYZ, DEGREES, 90, 0, -90)));
+
+        if (CAMERA_CHOICE == BACK) {
+            phoneYRotate = -90;
+        } else {
+            phoneYRotate = 90;
+        }
+        if (PHONE_IS_PORTRAIT) {
+            phoneXRotate = 90;
+        }
+        final float CAMERA_FORWARD_DISPLACEMENT = 22.3f;
+        final float CAMERA_VERTICAL_DISPLACEMENT = 13.2f;
+        final float CAMERA_LEFT_DISPLACEMENT = 19.2f;
+        OpenGLMatrix robotFromCamera = OpenGLMatrix
+                .translation(CAMERA_FORWARD_DISPLACEMENT, CAMERA_LEFT_DISPLACEMENT, CAMERA_VERTICAL_DISPLACEMENT)
+                .multiplied(Orientation.getRotationMatrix(EXTRINSIC, YZX, DEGREES, phoneYRotate, phoneZRotate, phoneXRotate));
+        for (VuforiaTrackable trackable : allTrackables) {
+            ((VuforiaTrackableDefaultListener) trackable.getListener()).setPhoneInformation(robotFromCamera, parameters.cameraDirection);
+        }
+        waitForStart();//等待开始
+        targetsSkyStone.activate();
+        //shejiao(jiaodu.fangxia);
+        //endregion
+        //region vuforia图像识别
+        runMotor(MotorMode.qian);
+        sleep(2000);//行走至天石附近，鉴于相机硬件条件受限，图像识别距离过短
+        // 而机器与天石初始位置相对固定，采用该方法使得机器靠近天石
+        runMotor(MotorMode.youxuan);
+        sleep(2000);//机体旋转90度面向天石、
+        runMotor(MotorMode.qian);
+        sleep(500);//靠近天石，避免无法识别
+        while (!isStopRequested()) {
+            targetVisible = false;
+            for (VuforiaTrackable trackable : allTrackables) {
+                if (((VuforiaTrackableDefaultListener) trackable.getListener()).isVisible()) {
+                    telemetry.addData("Visible Target", trackable.getName());
+                    targetVisible = true;
+                    OpenGLMatrix robotLocationTransform = ((VuforiaTrackableDefaultListener) trackable.getListener()).getUpdatedRobotLocation();
+                    if (robotLocationTransform != null) {
+                        if (trackable.getName() == "Stone Target") {
+                            lastLocation = robotLocationTransform;
+                        } 
+//                        else {
+//                            robotLocation = robotLocationTransform;
+//                        }
+                    }
+                    break;
+                }
+                }
+
+
+            if (targetVisible) {
+                if (getstone = false){
+                if (lastLocation != null) {
+                    VectorF translation = lastLocation.getTranslation();
+                    telemetry.addData("Pos (mm)", "{X, Y, Z} = %.1f, %.1f, %.1f",
+                            translation.get(0), translation.get(1), translation.get(2));
+                    Orientation rotation = Orientation.getOrientation(lastLocation, EXTRINSIC, XYZ, DEGREES);
+                    telemetry.addData("Rot (deg)", "{Roll, Pitch, Heading} = %.0f, %.0f, %.0f", rotation.firstAngle, rotation.secondAngle, rotation.thirdAngle);
+                    tX = translation.get(0);
+                    tY = translation.get(1);
+                    rZ = rotation.secondAngle;
+                    //相对天石的xyz，用于寻找天石
+                //region寻找天石导航
+                if (rZ > 15) {
+                    telemetry.addData(">", "右旋！");
+                    telemetry.update();
+                    runMotor(MotorMode.youxuan);
+                } else if (rZ < -15) {
+                    telemetry.addData(">", "左旋！");
+                    telemetry.update();
+                    runMotor(MotorMode.zuoxuan);
+                } else {
+                    if (Math.abs(tY) <= 20 && Math.abs(tX) <= 10) {
+                        runMotor(MotorMode.ting);
+                    if (tX < -40 || tX > 40) {
+                        if (tY < -20) {
+                            runMotor(MotorMode.zuo);
+                            telemetry.addData(">>", "左！");
+                            telemetry.update();
+                        }
+                        //偏移量小于0，则往正方向平移是的偏移量等于0
+                        else if (tY > 20) {
+                            runMotor(MotorMode.you);
+                            telemetry.addData(">>", "右！");
+                            telemetry.update();
+                        }
+                        //同上
+                        else {
+                            runMotor(MotorMode.qian);
+                            telemetry.addData(">>", "前！");
+                            telemetry.update();
+                            if (Math.abs(tX) < 10) {
+                                shejiao(jiaodu.zhuaqu);
+                                getstone = true;
+                                runMotor(MotorMode.zuoxuan);//转动返程
+                                sleep(3000);
+                                runMotor(MotorMode.qian);
+                                sleep(2000);
+                                runMotor(MotorMode.zuoxuan);
+                                sleep(1000);
+                                guding.setPosition(1);//放下机器下方挡板推动盘子
+                                runMotor(MotorMode.qian);
+                                sleep(2000);//同上，如果设备条件足够，可采用注释内代码
+                                shejiao(jiaodu.fangxia);
+                                stop();//退出自动阶段
+                            }
+                        }
+
+                    }
+                        }
+                }
+
+                }
+                }
+
+                //endregion
+//                 if (robotLocation != null) {
+//                     VectorF translations = robotLocation.getTranslation();
+//                     telemetry.addData("RealPos (mm)", "{X, Y, Z} = %.1f, %.1f, %.1f",
+//                             translations.get(0), translations.get(1), translations.get(2));
+//                     Orientation rotations = Orientation.getOrientation(robotLocation, EXTRINSIC, XYZ, DEGREES);
+//                     telemetry.addData("RealRot (deg)", "{Roll, Pitch, Heading} = %.0f, %.0f, %.0f", rotations.firstAngle, rotations.secondAngle, rotations.thirdAngle);
+//                     tXs = translations.get(0);
+//                     tYs = translations.get(1);
+//                     rZs = rotations.secondAngle;
+                     //相对场地的xyz,用于场地导航
+
+//                 }
+//                if (getstone) {
+//
+//
+//                }
+            }
+            telemetry.update();
+        }
+        targetsSkyStone.deactivate();
+        //endregion
+        runtime.reset();
+
+
+    }
+
+    //region移动
+    public void runMotor(MotorMode mode) {
+        switch (mode) {
+            case qian:
+                zuoqian.setPower(0.5);
+                zuohou.setPower(0.5);
+                youqian.setPower(0.5);
+                youhou.setPower(0.5);
+                break;
+            case hou:
+                zuoqian.setPower(-0.5);
+                zuohou.setPower(-0.5);
+                youqian.setPower(-0.5);
+                youhou.setPower(-0.5);
+                break;
+            case zuo:
+                zuoqian.setPower(-0.5);
+                zuohou.setPower(0.5);
+                youqian.setPower(0.5);
+                youhou.setPower(-0.5);
+                break;
+            case you:
+                zuoqian.setPower(0.5);
+                zuohou.setPower(-0.5);
+                youqian.setPower(-0.5);
+                youhou.setPower(0.5);
+                break;
+            case ting:
+                zuoqian.setPower(0);
+                zuohou.setPower(0);
+                youqian.setPower(0);
+                youhou.setPower(0);
+                break;
+            case youxuan:
+                zuoqian.setPower(0.2);
+                zuohou.setPower(0.2);
+                youqian.setPower(-0.2);
+                youhou.setPower(-0.2);
+                break;
+            case zuoxuan:
+                zuoqian.setPower(-0.2);
+                zuohou.setPower(-0.2);
+                youqian.setPower(0.2);
+                youhou.setPower(0.2);
+                break;
+        }
+    }
+
+    //endregion
+    //region机械爪
+    public void shejiao(jiaodu mode) {
+        switch (mode) {
+            case zhuaqu:
+                tisheng.setPosition(0.4);
+                shangzhua.setPosition(0.2);
+                xiazhua.setPosition(0.2);
+                tisheng.setPosition(0.2);
+            case fangxia:
+                tisheng.setPosition(0.2);
+                shangzhua.setPosition(0.2);
+                xiazhua.setPosition(0.2);
+                tisheng.setPosition(0.4);//TODO:待修改
+
+        }
+    }
+    // endregion
+}
+
